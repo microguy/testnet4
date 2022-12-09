@@ -17,6 +17,7 @@
 #include "consensus/validation.h"
 #include "hash.h"
 #include "init.h"
+#include "key_io.h" // access to DecodeDestination
 #include "policy/fees.h"
 #include "policy/policy.h"
 #include "pow.h"
@@ -1156,6 +1157,10 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
+    if (nHeight == consensusParams.sbHeight) {
+        return consensusParams.sbAmount;
+    }
+
     CAmount nSubsidy = 50 * COIN;//First block is worth a ceremonial 50 coins.
 
     if (nHeight > 0 && nHeight <= 200)
@@ -1935,6 +1940,23 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                          error("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
                                block.vtx[0]->GetValueOut(), blockReward),
                                REJECT_INVALID, "bad-cb-amount");
+
+    ///////////////////////////////////////////////////////////////////////////////////////////
+
+    // recipientscript is 76a914fe5cb4dfa8404d3a15af9a65fd19f6f502eaa99488ac
+    // OP_DUP OP_HASH160 e53bb1ac99f027beefbed0229c77c7606a866046 OP_EQUALVERIFY OP_CHECKSIG
+    //
+    // this can be verified by entering 'validateaddress EH1FCZeZniZXWvz2wqREPqZp6TMgxxTivP'
+    // into the rpc console, and verifying the script is as above..
+
+    if (pindex->nHeight == chainparams.GetConsensus().sbHeight)
+    {
+        const CScript recipientScript = GetScriptForDestination(DecodeDestination(chainparams.GetConsensus().sbAddress));
+        if (block.vtx[0]->vout.size() != 1) return false;
+        if (block.vtx[0]->vout[0].scriptPubKey != recipientScript) return false;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////
 
     if (!control.Wait())
         return state.DoS(100, false);
