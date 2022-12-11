@@ -223,8 +223,8 @@ public:
         consensus.mayFork = 2016;
         consensus.julyFork2 = 2016;
         consensus.febFork = 2016;
-        consensus.sbHeight = 3600;
-        consensus.sbAddress = "myc7ZQcsWNQH2Lim8m5Drd89owS6s1DnEx";
+        consensus.sbHeight = 4000;
+        consensus.sbAddress = "mm7ndBYxHEqnJNdRmHydGLjjf5UnXL9LZo";
         consensus.sbAmount = 11000000 * COIN;
 
         consensus.nEnforceBlockUpgradeMajority = 375;
